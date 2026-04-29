@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bordeaux: #a20603;
+  --bordeaux-dark: #7a0402;
+  --cream: #fffaf3;
+  --cream-dark: #f4ecdd;
+}
+
+html,
+body {
+  background-color: var(--cream);
+  color: #2b2218;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+@layer components {
+  .container-narrow {
+    @apply mx-auto w-full max-w-5xl px-6;
+  }
+
+  .divider-line {
+    @apply h-px w-16 bg-bordeaux/40;
+  }
+
+  .btn-bordeaux {
+    @apply inline-flex items-center justify-center rounded-full border border-bordeaux bg-bordeaux px-8 py-3 text-sm font-medium uppercase tracking-[0.2em] text-cream transition-all duration-300 hover:bg-bordeaux-dark hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center rounded-full border border-bordeaux px-8 py-3 text-sm font-medium uppercase tracking-[0.2em] text-bordeaux transition-all duration-300 hover:bg-bordeaux hover:text-cream;
+  }
+
+  .input-elegant {
+    @apply w-full rounded-md border border-bordeaux/30 bg-cream/70 px-4 py-3 font-serif text-base text-stone-800 placeholder:text-stone-400 focus:border-bordeaux focus:outline-none focus:ring-2 focus:ring-bordeaux/20;
+  }
+
+  .label-elegant {
+    @apply mb-2 block font-sans text-xs font-medium uppercase tracking-[0.18em] text-bordeaux;
+  }
+
+  .section-divider {
+    @apply mx-auto flex items-center justify-center gap-4;
+  }
+
+  .ornament {
+    @apply mx-auto h-px w-24 bg-gradient-to-r from-transparent via-bordeaux/60 to-transparent;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .grain-overlay::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(162, 6, 3, 0.04) 1px, transparent 1px);
+    background-size: 3px 3px;
+    pointer-events: none;
+  }
+}
+
+/* Envelope animation states */
+.envelope-flap {
+  transform-origin: top center;
+  transition: transform 1.6s cubic-bezier(0.7, 0, 0.3, 1);
+}
+
+.envelope-flap.open {
+  transform: rotateX(180deg);
+}
+
+.envelope-card {
+  transition: transform 1.4s cubic-bezier(0.6, 0, 0.4, 1) 0.6s,
+    opacity 1s ease-out 0.6s;
+}
+
+.envelope-card.open {
+  transform: translateY(-110%);
+}
+
+/* Soft floating animation for petals */
+.petal {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.85;
+}
