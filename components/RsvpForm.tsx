@@ -34,6 +34,7 @@ export default function RsvpForm() {
   const [notes, setNotes] = useState("");
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [doneAttending, setDoneAttending] = useState(false);
+  const [isUpdate, setIsUpdate] = useState(false);
 
   async function handleLookup(e: React.FormEvent) {
     e.preventDefault();
@@ -43,7 +44,7 @@ export default function RsvpForm() {
       const res = await fetch("/api/lookup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName })
+        body: JSON.stringify({ firstName, lastName }),
       });
       const json = await res.json();
       if (!res.ok || !json.found) {
@@ -51,15 +52,60 @@ export default function RsvpForm() {
       }
       const g: Guest = json.guest;
       setGuest(g);
-      setAttendees([
-        {
-          id: newId(),
-          first_name: g.first_name,
-          last_name: g.last_name,
-          relation: "main",
-          allergies: ""
+
+      const prevResponse = json.response as
+        | { attending: boolean; notes: string }
+        | null;
+      const prevAttendees = (json.attendees ?? []) as Array<{
+        first_name: string;
+        last_name: string;
+        relation: "main" | "plus_one" | "family";
+        allergies: string | null;
+      }>;
+
+      if (prevResponse) {
+        setIsUpdate(true);
+        setAttending(prevResponse.attending);
+        setNotes(prevResponse.notes);
+
+        if (prevAttendees.length > 0) {
+          setAttendees(
+            prevAttendees.map((a) => ({
+              id: newId(),
+              first_name: a.first_name,
+              last_name: a.last_name,
+              relation: a.relation,
+              allergies: a.allergies ?? "",
+            })),
+          );
+        } else {
+          // Aveva detto "non vengo": non c'erano attendees salvati.
+          // Prepariamo comunque la riga del main per riaprire lo scenario.
+          setAttendees([
+            {
+              id: newId(),
+              first_name: g.first_name,
+              last_name: g.last_name,
+              relation: "main",
+              allergies: "",
+            },
+          ]);
         }
-      ]);
+      } else {
+        setIsUpdate(false);
+        setAttending(null);
+        setNotes("");
+        setAttendees([
+          {
+            id: newId(),
+            first_name: g.first_name,
+            last_name: g.last_name,
+            relation: "main",
+            allergies: "",
+          },
+        ]);
+      }
+
       setStep("form");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Errore.");
@@ -76,8 +122,8 @@ export default function RsvpForm() {
         first_name: "",
         last_name: "",
         relation: "plus_one",
-        allergies: ""
-      }
+        allergies: "",
+      },
     ]);
   }
 
@@ -89,8 +135,8 @@ export default function RsvpForm() {
         first_name: "",
         last_name: "",
         relation: "family",
-        allergies: ""
-      }
+        allergies: "",
+      },
     ]);
   }
 
@@ -100,7 +146,7 @@ export default function RsvpForm() {
 
   function updateAttendee(id: string, patch: Partial<Attendee>) {
     setAttendees((arr) =>
-      arr.map((a) => (a.id === id ? { ...a, ...patch } : a))
+      arr.map((a) => (a.id === id ? { ...a, ...patch } : a)),
     );
   }
 
@@ -123,10 +169,10 @@ export default function RsvpForm() {
                 first_name: a.first_name,
                 last_name: a.last_name,
                 relation: a.relation,
-                allergies: a.allergies
+                allergies: a.allergies,
               }))
-            : []
-        })
+            : [],
+        }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Errore.");
@@ -163,6 +209,16 @@ export default function RsvpForm() {
             <p className="mt-4 text-center font-serif text-base italic text-stone-600">
               Inserisci il tuo nome e cognome come riportato sull&apos;invito.
             </p>
+            <p className="mt-4 text-center font-serif text-base italic text-stone-600">
+              Se incontri un problema contattaci al numero{" "}
+              <a
+                href="tel:+393339656113"
+                className="text-bordeaux hover:underline"
+              >
+                +39 333 96 56 113
+              </a>
+              .
+            </p>
 
             <div className="mt-10 grid gap-6 sm:grid-cols-2">
               <div>
@@ -198,11 +254,7 @@ export default function RsvpForm() {
             )}
 
             <div className="mt-10 flex justify-center">
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-bordeaux"
-              >
+              <button type="submit" disabled={loading} className="btn-bordeaux">
                 {loading ? "ricerca…" : "continua"}
               </button>
             </div>
@@ -223,8 +275,14 @@ export default function RsvpForm() {
               ciao {guest.first_name}
             </p>
             <h2 className="mt-3 text-center font-script text-4xl text-bordeaux sm:text-5xl">
-              Sarai dei nostri?
+              {isUpdate ? "Aggiorna la tua risposta" : "Sarai dei nostri?"}
             </h2>
+            {isUpdate && (
+              <p className="mt-3 text-center font-serif text-sm italic text-stone-600">
+                Abbiamo già la tua conferma. I dati sono pre-compilati: modifica
+                ciò che vuoi e invia di nuovo.
+              </p>
+            )}
 
             <div className="mt-8 flex justify-center gap-4">
               <button
@@ -266,7 +324,7 @@ export default function RsvpForm() {
                   </p>
                 </div>
 
-                {attendees.map((a, idx) => (
+                {attendees.map((a) => (
                   <div
                     key={a.id}
                     className="rounded-md border border-bordeaux/15 bg-cream-dark/30 p-6"
@@ -276,8 +334,8 @@ export default function RsvpForm() {
                         {a.relation === "main"
                           ? "invitato"
                           : a.relation === "plus_one"
-                          ? "accompagnatore"
-                          : `familiare`}
+                            ? "accompagnatore"
+                            : `familiare`}
                       </span>
                       {a.relation !== "main" && (
                         <button
@@ -298,7 +356,7 @@ export default function RsvpForm() {
                           value={a.first_name}
                           onChange={(e) =>
                             updateAttendee(a.id, {
-                              first_name: e.target.value
+                              first_name: e.target.value,
                             })
                           }
                           required
@@ -312,7 +370,7 @@ export default function RsvpForm() {
                           value={a.last_name}
                           onChange={(e) =>
                             updateAttendee(a.id, {
-                              last_name: e.target.value
+                              last_name: e.target.value,
                             })
                           }
                           required
@@ -400,7 +458,11 @@ export default function RsvpForm() {
                   disabled={loading}
                   className="btn-bordeaux"
                 >
-                  {loading ? "invio…" : "conferma"}
+                  {loading
+                    ? "invio…"
+                    : isUpdate
+                    ? "aggiorna risposta"
+                    : "conferma"}
                 </button>
               </div>
             )}
