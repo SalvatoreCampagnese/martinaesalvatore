@@ -259,6 +259,11 @@ export default function RsvpForm() {
                     Compila i dati per ciascun partecipante. Indica eventuali
                     allergie o intolleranze.
                   </p>
+                  <p className="mt-3 font-sans text-[11px] uppercase tracking-[0.3em] text-bordeaux/70">
+                    {guest.has_plus_one
+                      ? "il tuo invito include un accompagnatore"
+                      : "il tuo invito è valido per la sola persona indicata"}
+                  </p>
                 </div>
 
                 {attendees.map((a, idx) => (

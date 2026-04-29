@@ -4,6 +4,8 @@
 create extension if not exists "uuid-ossp";
 
 -- Lista degli invitati ufficiali (precaricata dagli sposi)
+-- has_plus_one = true SOLO per gli invitati a cui concedete un accompagnatore.
+-- Default false: la maggior parte degli invitati NON può portare un +1.
 create table if not exists public.guests (
   id uuid primary key default uuid_generate_v4(),
   first_name text not null,
@@ -61,8 +63,16 @@ alter table public.guests enable row level security;
 alter table public.rsvp_responses enable row level security;
 alter table public.rsvp_attendees enable row level security;
 
--- Esempio inserimento invitati
--- insert into public.guests (first_name, last_name, has_plus_one)
--- values
---   ('Mario', 'Rossi', true),
---   ('Giulia', 'Bianchi', false);
+-- Vincolo applicativo: i partecipanti con relation = 'plus_one' sono accettati
+-- dall'API solo se il guest associato ha has_plus_one = true (validato in
+-- /app/api/rsvp/route.ts), e al massimo uno per invitato.
+
+-- Esempio: inserimento invitati con e senza diritto al +1.
+-- insert into public.guests (first_name, last_name, has_plus_one) values
+--   ('Mario', 'Rossi', true),     -- può portare un accompagnatore
+--   ('Giulia', 'Bianchi', false), -- da sola (eventuali familiari sì)
+--   ('Luca', 'Neri', false);
+
+-- Per concedere/revocare il +1 a un invitato esistente:
+-- update public.guests set has_plus_one = true
+--  where lower(first_name) = 'mario' and lower(last_name) = 'rossi';

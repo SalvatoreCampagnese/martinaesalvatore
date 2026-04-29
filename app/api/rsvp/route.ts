@@ -25,6 +25,29 @@ export async function POST(request: Request) {
       );
     }
 
+    const supabase = getSupabaseAdmin();
+
+    // Verify guest exists and read the +1 entitlement from the DB
+    // (don't trust the client).
+    const { data: guest, error: guestError } = await supabase
+      .from("guests")
+      .select("id, has_plus_one")
+      .eq("id", guestId)
+      .maybeSingle();
+
+    if (guestError) {
+      return NextResponse.json(
+        { error: guestError.message },
+        { status: 500 }
+      );
+    }
+    if (!guest) {
+      return NextResponse.json(
+        { error: "Invitato non trovato." },
+        { status: 404 }
+      );
+    }
+
     if (attending) {
       if (attendees.length === 0) {
         return NextResponse.json(
@@ -32,6 +55,36 @@ export async function POST(request: Request) {
           { status: 400 }
         );
       }
+
+      const mainCount = attendees.filter((a) => a.relation === "main").length;
+      const plusOneCount = attendees.filter(
+        (a) => a.relation === "plus_one"
+      ).length;
+
+      if (mainCount !== 1) {
+        return NextResponse.json(
+          { error: "L'invitato principale deve essere presente una sola volta." },
+          { status: 400 }
+        );
+      }
+
+      if (plusOneCount > 1) {
+        return NextResponse.json(
+          { error: "Puoi aggiungere al massimo un accompagnatore." },
+          { status: 400 }
+        );
+      }
+
+      if (plusOneCount > 0 && !guest.has_plus_one) {
+        return NextResponse.json(
+          {
+            error:
+              "L'invito non prevede un accompagnatore. Per aggiungere altre persone usa la voce 'familiare'."
+          },
+          { status: 403 }
+        );
+      }
+
       for (const a of attendees) {
         if (!a.first_name?.trim() || !a.last_name?.trim()) {
           return NextResponse.json(
@@ -41,8 +94,6 @@ export async function POST(request: Request) {
         }
       }
     }
-
-    const supabase = getSupabaseAdmin();
 
     const { data: response, error: respError } = await supabase
       .from("rsvp_responses")

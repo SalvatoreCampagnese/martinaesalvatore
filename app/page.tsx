@@ -7,6 +7,7 @@ import StorySection from "@/components/StorySection";
 import DateSection from "@/components/DateSection";
 import VenueSection from "@/components/VenueSection";
 import ProgramSection from "@/components/ProgramSection";
+import GiftSection from "@/components/GiftSection";
 import RsvpCallToAction from "@/components/RsvpCallToAction";
 import Footer from "@/components/Footer";
 
@@ -25,6 +26,7 @@ export default function Home() {
       <DateSection />
       <VenueSection />
       <ProgramSection />
+      <GiftSection />
       <RsvpCallToAction />
       <Footer />
     </main>

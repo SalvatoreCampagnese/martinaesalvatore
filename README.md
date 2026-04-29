@@ -27,13 +27,23 @@ Apri http://localhost:3000.
 
 1. Crea un progetto su https://supabase.com
 2. Vai su **SQL editor** ed esegui il contenuto di `supabase/schema.sql`
-3. Inserisci gli invitati nella tabella `guests`:
+3. Inserisci gli invitati nella tabella `guests`. La colonna `has_plus_one`
+   controlla **chi** può aggiungere un accompagnatore: solo gli invitati con
+   `has_plus_one = true` vedranno il bottone `+ accompagnatore` e potranno
+   inserirlo (validato anche server-side, non si può aggirare via API).
 
 ```sql
 insert into public.guests (first_name, last_name, has_plus_one) values
-  ('Mario', 'Rossi', true),
-  ('Giulia', 'Bianchi', false);
+  ('Mario', 'Rossi', true),     -- può portare un +1
+  ('Giulia', 'Bianchi', false), -- da sola
+  ('Luca', 'Neri', false);
+
+-- Per concederlo dopo:
+update public.guests set has_plus_one = true
+ where lower(first_name) = 'luca' and lower(last_name) = 'neri';
 ```
+
+I familiari aggiuntivi sono **sempre** ammessi e illimitati per ogni invitato.
 
 4. Copia in `.env.local`:
    - `NEXT_PUBLIC_SUPABASE_URL` (Settings → API → Project URL)
