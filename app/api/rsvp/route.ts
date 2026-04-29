@@ -121,6 +121,7 @@ export async function POST(request: Request) {
     if (attending && attendees.length > 0) {
       const rows = attendees.map((a) => ({
         response_id: response.id,
+        guest_id: guestId,
         first_name: a.first_name.trim(),
         last_name: a.last_name.trim(),
         relation: a.relation,

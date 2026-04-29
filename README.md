@@ -27,6 +27,10 @@ Apri http://localhost:3000.
 
 1. Crea un progetto su https://supabase.com
 2. Vai su **SQL editor** ed esegui il contenuto di `supabase/schema.sql`
+   (per un nuovo progetto). Se il database esiste già da prima dell'aggiunta
+   della colonna `guest_id` su `rsvp_attendees`, esegui invece in sequenza
+   le migrations in `supabase/migrations/` (al momento solo
+   `0001_add_guest_id_to_attendees.sql`).
 3. Inserisci gli invitati nella tabella `guests`. La colonna `has_plus_one`
    controlla **chi** può aggiungere un accompagnatore: solo gli invitati con
    `has_plus_one = true` vedranno il bottone `+ accompagnatore` e potranno
@@ -62,7 +66,37 @@ I familiari aggiuntivi sono **sempre** ammessi e illimitati per ogni invitato.
    - aggiungere infiniti familiari
    - indicare allergie/intolleranze per ognuno
    - lasciare un messaggio
-4. L'API `/api/rsvp` fa upsert su `rsvp_responses` e ricrea le righe in `rsvp_attendees`.
+4. L'API `/api/rsvp` fa upsert su `rsvp_responses` e ricrea le righe in
+   `rsvp_attendees`. **Ogni** riga di `rsvp_attendees` (invitato principale,
+   accompagnatore, familiari) ha un `guest_id` che punta all'invitato
+   ufficiale che li sta registrando, così è possibile risalire facilmente a
+   chi ha portato chi.
+
+### Query utili
+
+Tutte le persone registrate da un certo invitato:
+
+```sql
+select a.first_name, a.last_name, a.relation, a.allergies
+  from public.rsvp_attendees a
+  join public.guests g on g.id = a.guest_id
+ where lower(g.first_name) = 'mario' and lower(g.last_name) = 'rossi';
+```
+
+Riepilogo confermati per invitato:
+
+```sql
+select g.first_name, g.last_name, count(*) as totale,
+       count(*) filter (where relation='main')      as principali,
+       count(*) filter (where relation='plus_one')  as accompagnatori,
+       count(*) filter (where relation='family')    as familiari
+  from public.rsvp_attendees a
+  join public.guests g on g.id = a.guest_id
+  join public.rsvp_responses r on r.id = a.response_id
+ where r.attending = true
+ group by g.id, g.first_name, g.last_name
+ order by g.last_name;
+```
 
 ## Struttura
 
